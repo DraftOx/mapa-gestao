@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Mapa Mental da Gestão de Pessoas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Orbitron:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: a galaxy. The sun sits at the centre and its four planets orbit on an ellipse.
+   Selecting a planet moves it to the centre, and its topics become moons on a ring around it. */
+:root{
+  color-scheme:dark;
+  --space:#050718; --space-2:#0C1236;
+  --ink:#E9EEFF; --muted:#9BA8D8; --line:rgba(170,184,255,.2); --glass:rgba(10,14,40,.84);
+  --teal:#3FD6BC; --teal-ink:#03221D;
+  --amber:#FFB84A; --amber-ink:#2A1800;
+  --violet:#A98BFF; --violet-ink:#1A0A46;
+  --crimson:#FF6B84; --crimson-ink:#35050F;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --f-display:"Orbitron","Arial Black",system-ui,sans-serif;
+  --f-body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--space)}
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(ellipse 90% 60% at 50% 34%,#1A2070 0%,var(--space-2) 38%,var(--space) 75%,#020310 100%);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:16px;
+  line-height:1.5;
+  padding-block:22px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  overflow-x:hidden;
+}
+button{font-family:inherit}
+button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto}
+
+/* ---------- splash ---------- */
+.splash{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--space);transition:opacity .6s ease;cursor:pointer}
+.splash.gone{opacity:0;pointer-events:none}
+.sp-orb{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 36% 30%,#E4ECFF 0%,#7C97FF 28%,#2B3296 62%,#0A0D3A 100%);box-shadow:0 0 60px rgba(124,151,255,.6);animation:breathe 2.4s ease-in-out infinite}
+.sp-t{margin:0;font:700 16px/1.2 var(--f-display);letter-spacing:.2em;text-transform:uppercase}
+.sp-s{margin:0;font:500 12px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+@keyframes breathe{50%{transform:scale(1.06);box-shadow:0 0 90px rgba(124,151,255,.8)}}
+
+/* ---------- header ---------- */
+.top{display:flex;flex-wrap:wrap;gap:16px 28px;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
+.eyebrow{margin:0;font:500 11.5px/1.5 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{margin:6px 0 0;font:700 clamp(18px,2.8vw,28px)/1.2 var(--f-display);letter-spacing:.05em;text-transform:uppercase;text-wrap:balance}
+.hint{margin:10px 0 0;color:var(--muted);max-width:62ch}
+.meter{display:flex;align-items:center;gap:10px;font:500 12.5px var(--f-mono);color:var(--muted)}
+.bar{width:140px;height:4px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--amber),var(--crimson));transition:width .6s ease}
+
+/* ---------- galaxy ---------- */
+.scene{position:relative}
+.stage{position:relative;height:clamp(560px,78vh,760px);margin-top:4px}
+.lanes{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0;transition:opacity .4s ease}
+.lanes.hide{opacity:0}
+.lane{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:2 10;opacity:.8;animation:flow 2.4s linear infinite}
+.spoke{fill:none;stroke-width:1.2;stroke-dasharray:3 6;opacity:.45}
+@keyframes flow{to{stroke-dashoffset:-24}}
+
+.sun,.body,.moon{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  transition:left .9s var(--ease),top .9s var(--ease),width .9s var(--ease),height .9s var(--ease),opacity .6s ease;
+  border:0;padding:0;margin:0;background:transparent;color:inherit;cursor:pointer;
+}
+.stage:not(.ready) .sun,.stage:not(.ready) .body,.stage:not(.ready) .moon{transition:none}
+
+.orb{position:absolute;inset:0;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 34% 30%,color-mix(in srgb,var(--c) 35%,#fff) 0%,var(--c) 42%,color-mix(in srgb,var(--c) 30%,#000) 100%);
+  box-shadow:0 0 34px -4px var(--c),inset -12px -16px 30px rgba(0,0,0,.45);
+  transition:filter .2s ease}
+.orb::after{content:"";position:absolute;inset:0;border-radius:50%;background:repeating-linear-gradient(168deg,rgba(255,255,255,.08) 0 3px,transparent 3px 13px)}
+
+.body{z-index:2}
+.body:hover .orb{filter:brightness(1.12)}
+.body::before{content:"";position:absolute;inset:-20%;border-radius:50%;border:1px dashed color-mix(in srgb,var(--c) 55%,transparent);animation:spin 70s linear infinite;pointer-events:none}
+.body.is-focus::before{border-style:solid;opacity:.5}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lbl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:12px;width:max-content;max-width:200px;text-align:center;font:700 15px/1.25 var(--f-body);color:var(--ink);text-shadow:0 1px 10px #000;pointer-events:none}
+.lbl small{display:block;margin-top:4px;font:500 11.5px var(--f-mono);letter-spacing:.05em;color:var(--muted)}
+
+.sun{z-index:4;--c:#7C97FF}
+.sun .orb{background:radial-gradient(circle at 36% 30%,#E4ECFF 0%,#7C97FF 26%,#2B3296 60%,#0A0D3A 100%);box-shadow:0 0 80px -8px rgba(124,151,255,.7),inset -18px -22px 40px rgba(0,0,0,.5)}
+.sun::after{content:"";position:absolute;left:-40%;right:-40%;top:43%;height:22%;border:1.5px solid rgba(233,238,255,.4);border-radius:50%;transform:rotate(-14deg);pointer-events:none}
+.sun .lbl{font:700 13px/1.25 var(--f-display);letter-spacing:.12em;text-transform:uppercase;text-align:center;max-width:none}
+.sun.off{opacity:0;pointer-events:none}
+.sun:hover .orb{filter:brightness(1.1)}
+
+.b-conceito{--c:var(--teal)}
+.b-objetivos{--c:var(--amber)}
+.b-processos{--c:var(--violet)}
+.b-papel{--c:var(--crimson)}
+.b-sun{--c:#7C97FF}
+
+.moon{z-index:3;width:30px;height:30px;border-radius:50%}
+.moon .dot{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0%,var(--c) 45%,color-mix(in srgb,var(--c) 40%,#000) 100%);box-shadow:0 0 16px var(--c);transition:transform .25s ease}
+.moon:hover .dot,.moon.on .dot{transform:scale(1.25)}
+.moon.seen .dot::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--c) 70%,#fff)}
+.moon:focus-visible .dot{outline:2px solid #fff;outline-offset:3px}
+.mlbl{position:absolute;left:50%;top:50%;width:max-content;max-width:165px;padding:5px 10px;border-radius:10px;background:rgba(6,9,30,.78);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);font:500 13.5px/1.3 var(--f-body);color:var(--ink);text-align:center;pointer-events:none;
+  transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px)));display:none}
+.stage.labels .moon .mlbl,.moon.on .mlbl{display:block}
+.stage.has-focus .body:not(.is-focus) .lbl{display:none}
+.stage:not(.labels) .body.is-focus .lbl{display:none}
+.moon.on .mlbl{border-color:var(--c);background:rgba(6,9,30,.92)}
+
+.back{position:absolute;left:0;top:0;z-index:5;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font:500 13px/1.2 var(--f-body);cursor:pointer}
+.back:hover{border-color:var(--ink)}
+
+/* ---------- panel ---------- */
+.panel{margin-top:16px;padding:20px 22px 16px;border:1px solid var(--line);border-radius:22px;background:var(--glass);color:var(--ink);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 30px 80px -30px #000;animation:rise .4s var(--ease)}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.panel.b-conceito,.panel.b-objetivos,.panel.b-processos,.panel.b-papel,.panel.b-sun{border-color:color-mix(in srgb,var(--c) 45%,transparent)}
+.p-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.chip{display:inline-flex;padding:5px 11px;border-radius:999px;background:var(--c);color:var(--space);font:600 11.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.x{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.x:hover{border-color:var(--ink)}
+.panel h2{margin:14px 0 4px;font:700 clamp(18px,2.6vw,22px)/1.25 var(--f-body);text-wrap:balance}
+.p-sub{margin:0;color:var(--muted);font:500 13px/1.4 var(--f-mono)}
+.p-body{flex:1;min-height:0;overflow:auto;margin-top:10px}
+.lead{margin:0 0 10px;font-size:15.5px;max-width:62ch}
+.grp{margin-top:16px}
+.grp h3{margin:0 0 8px;font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chips,.items{margin:0;padding:0;list-style:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chips li{padding:5px 11px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 60%,transparent);background:color-mix(in srgb,var(--c) 12%,transparent);font-size:14px}
+.items{display:grid;gap:7px}
+.items li{position:relative;padding-left:18px;font-size:15px;max-width:62ch}
+.items li::before{content:"";position:absolute;left:2px;top:.6em;width:7px;height:7px;border-radius:2px;background:var(--c)}
+.jumps{display:grid;gap:6px}
+.jump{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);font:500 14.5px/1.3 var(--f-body);text-align:left;cursor:pointer}
+.jump:hover{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,transparent)}
+.jt{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:var(--space)}
+.jt:empty{background:transparent;border:1px solid var(--line)}
+.pnote{margin:16px 0 0;padding:11px 13px;border:1px dashed color-mix(in srgb,var(--c) 70%,transparent);border-radius:12px;font-size:14px;max-width:62ch}
+.quote{margin:18px 0 4px;padding:0;font:600 clamp(14px,2vw,16px)/1.45 var(--f-display);color:var(--ink);text-wrap:balance}
+.p-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.p-pos{font:500 12px var(--f-mono);color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:999px;border:1px solid var(--ink);background:transparent;color:var(--ink);font:600 14px/1.2 var(--f-body);cursor:pointer}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.08)}
+.btn.primary{background:var(--ink);color:var(--space)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn[hidden]{display:none!important}
+
+@media (min-width:760px){
+  .panel{position:absolute;top:0;right:0;bottom:0;width:360px;height:100%;margin-top:0;display:flex;flex-direction:column;overflow:hidden}
+  .p-body{padding-right:4px}
+}
+@media (max-width:759px){
+  .stage{height:clamp(560px,74vh,680px)}
+}
+
+/* ---------- quiz ---------- */
+.quiz{max-width:880px;margin:64px auto 0;display:grid;gap:16px}
+.q-head h2{margin:6px 0 6px;font:700 clamp(20px,3vw,28px)/1.2 var(--f-display);letter-spacing:.03em;text-transform:uppercase;text-wrap:balance}
+.q-head p{margin:0;color:var(--muted);max-width:56ch}
+.q-card{background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:22px 24px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.q-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.q-segs{display:flex;gap:4px}
+.q-segs i{width:20px;height:4px;border-radius:3px;background:var(--line)}
+.q-segs i.done{background:var(--teal)}
+.q-q{margin:16px 0 14px;font:600 clamp(17px,2.3vw,20px)/1.3 var(--f-body);text-wrap:balance}
+.opts{display:grid;gap:9px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:500 15px/1.35 var(--f-body);text-align:left;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt:disabled{cursor:default}
+.opt:disabled:not(.ok):not(.bad){opacity:.5}
+.opt .ltr{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font:500 12px var(--f-mono)}
+.opt.ok{border-color:var(--teal);background:rgba(63,214,188,.14)}
+.opt.ok .ltr{background:var(--teal);border-color:var(--teal);color:var(--teal-ink)}
+.opt.bad{border-color:var(--crimson);background:rgba(255,107,132,.14)}
+.opt.bad .ltr{background:var(--crimson);border-color:var(--crimson);color:var(--crimson-ink)}
+.fb{margin:14px 0 0;font-size:15px;max-width:64ch}
+.q-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:16px}
+.q-score{margin:18px 0 4px;font:800 clamp(40px,8vw,60px)/1 var(--f-display)}
+.q-score span{font:500 16px var(--f-body);color:var(--muted);margin-left:8px}
+.q-msg{margin:0;font-size:16px;max-width:56ch}
+
+/* ---------- footer ---------- */
+.foot{max-width:880px;margin:56px auto 0;color:var(--muted);font-size:14px}
+.foot p{margin:0 0 10px;max-width:70ch}
+.foot details{border-top:1px solid var(--line);padding-top:12px}
+.foot summary{cursor:pointer;font:500 11.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.foot ul{margin:12px 0 0;padding-left:18px;display:grid;gap:6px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="sp-orb"></div>
+  <p class="sp-t">Gestão de Pessoas</p>
+  <p class="sp-s">Carregando o guia…</p>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Colégio Estadual Dom João Becker · Ética, Empreendedorismo e Recursos Humanos · Andrigo e Ariane</p>
+      <h1>Mapa galáctico da Gestão de Pessoas</h1>
+      <p class="hint">Toque no planeta central para ver a síntese. Cada planeta leva a um sistema com os seus tópicos. Não entre em pânico.</p>
+    </div>
+    <div class="meter" role="status" aria-live="polite">
+      <div class="bar"><i id="barFill"></i></div>
+      <span id="meterTxt">0 de 23 tópicos explorados</span>
+    </div>
+  </header>
+
+  <div class="scene">
+    <div class="stage" id="stage">
+      <svg class="lanes" id="lanes" aria-hidden="true"></svg>
+      <button class="sun" id="sun" type="button" data-id="sun" aria-label="Gestão de Pessoas: síntese. Não entre em pânico.">
+        <span class="orb"></span>
+        <span class="lbl">Gestão de<br>Pessoas</span>
+      </button>
+      <button class="back" id="back" type="button" hidden></button>
+    </div>
+
+    <aside class="panel" id="panel" hidden aria-live="polite">
+      <div class="p-head">
+        <span class="chip" id="pChip"></span>
+        <button class="x" id="pClose" type="button" aria-label="Fechar painel">×</button>
+      </div>
+      <h2 id="pTitle"></h2>
+      <p class="p-sub" id="pSub" hidden></p>
+      <div class="p-body" id="pBody"></div>
+      <div class="p-nav">
+        <button class="btn" id="pPrev" type="button"></button>
+        <span class="p-pos" id="pPos"></span>
+        <button class="btn primary" id="pNext" type="button"></button>
+      </div>
+    </aside>
+  </div>
+
+  <section class="quiz" aria-labelledby="qTitle" id="quiz">
+    <div class="q-head">
+      <p class="eyebrow">Teste de sobrevivência</p>
+      <h2 id="qTitle">O que ficou da galáxia?</h2>
+      <p>Sete perguntas sobre o conteúdo da aula. As alternativas mudam de ordem a cada tentativa.</p>
+    </div>
+    <div class="q-card" id="qCard"></div>
+  </section>
+
+  <footer class="foot">
+    <p>Conteúdo baseado na apresentação “Conceitos, processos e objetivos da Gestão de Pessoas”, do Prof. Esp. Marco Aurélio Sartori.</p>
+    <details>
+      <summary>Referências da aula</summary>
+      <ul>
+        <li>BARRETO, E. F. Estilos gerenciais e o impacto das organizações. Tese (Doutorado em Administração), Universidade Federal da Bahia. Salvador, BA, 2003.</li>
+        <li>CERVO, A. L.; BERVIAN, P. A. Metodologia científica. São Paulo: Makron Books, 1986.</li>
+        <li>CHIAVENATO, I. Gestão de pessoas: o novo papel dos recursos humanos nas organizações. Rio de Janeiro: Editora Campus, 1999.</li>
+        <li>CHIAVENATO, I. Recursos Humanos. 7. ed. compacta. São Paulo: Atlas, 2002.</li>
+        <li>DUTRA, Joel Souza. Competências: conceitos e instrumentos para a gestão de pessoas.</li>
+        <li>FISCHER, André. Um resgate conceitual e histórico dos modelos de gestão de pessoas. In: Fleury, M. (org.). As pessoas na organização. São Paulo: Editora Gente, 2002.</li>
+        <li>FLEURY, Maria Teresa Leme; FISCHER, Rosa Maria. Processo e relações do trabalho no Brasil. São Paulo: Atlas, 1998.</li>
+        <li>LACOMBE, Francisco José Masset. Recursos humanos: princípios e tendências. São Paulo: Saraiva, 2005.</li>
+        <li>LIMA, Adelaide Motta de. Análise &amp; Dados, Salvador, 1997.</li>
+        <li>LONGENECKER, J. G. et al. Administração de pequenas empresas. São Paulo: Thomson Learning, 2005.</li>
+        <li>MILKOVICH, G. T.; BOUDREAU, J. W. Administração de recursos humanos. 8. ed. São Paulo: Atlas, 2000.</li>
+      </ul>
+    </details>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var $ = function(s, r){ return (r || document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+var ICO = {
+  check: '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  xs: '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  arrowL: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  arrowR: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+
+/* ------------------------------------------------------------------ */
+/* Conteúdo (baseado na apresentação em PDF)                           */
+/* ------------------------------------------------------------------ */
+var BRANCHES = [
+  { id: "conceito", cls: "b-conceito", ang: -135, color: "#3FD6BC", name: "Conceito e características", short: "Conceito",
+    lead: ["A Gestão de Pessoas é o conjunto de práticas administrativas utilizadas para administrar o capital humano das organizações."],
+    groups: [
+      { h: "Seu objetivo é integrar", chips: true, items: ["Pessoas", "Processos", "Estratégias", "Resultados organizacionais"] },
+      { h: "Busca equilíbrio entre", chips: true, items: ["Produtividade", "Qualidade", "Satisfação profissional"] },
+      { h: "Características", items: ["Valorização do capital humano", "Desenvolvimento de competências", "Gestão participativa", "Foco em resultados"] }
+    ],
+    leaves: [
+      { id: "c1", t: "Conjunto de práticas administrativas", s: "Administra o capital humano",
+        lead: ["A Gestão de Pessoas é o conjunto de práticas administrativas utilizadas para administrar o capital humano das organizações."],
+        groups: [{ h: "A área atua no", chips: true, items: ["Desenvolvimento", "Motivação", "Retenção dos colaboradores"] }] },
+      { id: "c2", t: "Integra pessoas, processos, estratégias e resultados",
+        lead: ["Seu objetivo é integrar quatro elementos da organização."],
+        groups: [{ h: "Integrar", chips: true, items: ["Pessoas", "Processos", "Estratégias", "Resultados organizacionais"] }] },
+      { id: "c3", t: "Equilíbrio entre produtividade, qualidade e satisfação",
+        lead: ["A área busca equilíbrio entre três pontos ao desenvolver, motivar e reter os colaboradores."],
+        groups: [{ chips: true, items: ["Produtividade", "Qualidade", "Satisfação profissional"] }] },
+      { id: "c4", t: "Valorização humana e gestão participativa",
+        lead: ["Valorização do capital humano e gestão participativa estão entre as características da gestão de pessoas."],
+        groups: [{ h: "Todas as características", items: ["Valorização do capital humano", "Desenvolvimento de competências", "Gestão participativa", "Foco em resultados"] }] },
+      { id: "c5", t: "Competências e foco em resultados",
+        lead: ["Desenvolvimento de competências e foco em resultados completam as quatro características apresentadas na aula."],
+        groups: [{ chips: true, items: ["Desenvolvimento de competências", "Foco em resultados"] }] }
+    ] },
+  { id: "objetivos", cls: "b-objetivos", ang: -45, color: "#FFB84A", name: "Objetivos principais", short: "Objetivos",
+    lead: ["O que a gestão de pessoas busca alcançar dentro da organização."],
+    groups: [
+      { h: "Objetivos principais", items: ["Atrair profissionais qualificados", "Desenvolver competências técnicas e comportamentais", "Melhorar desempenho organizacional", "Aumentar produtividade", "Reduzir rotatividade de funcionários", "Promover motivação e engajamento", "Garantir qualidade de vida no trabalho"] },
+      { h: "Objetivo estratégico", items: ["Alinhar os colaboradores aos objetivos da organização."] },
+      { h: "Resultado esperado", items: ["Maior competitividade e crescimento empresarial."] }
+    ],
+    leaves: [
+      { id: "o1", t: "Atrair profissionais qualificados",
+        lead: ["Atrair profissionais qualificados é o primeiro dos objetivos principais da gestão de pessoas."],
+        groups: [{ h: "Processo ligado", items: ["Agregar pessoas: o recrutamento atrai candidatos para as vagas disponíveis."] }] },
+      { id: "o2", t: "Desenvolver competências técnicas e comportamentais",
+        lead: ["Preparar as pessoas tanto nas habilidades técnicas quanto nas comportamentais."],
+        groups: [{ h: "Processo ligado", items: ["Desenvolver pessoas: o treinamento capacita para as funções atuais e o desenvolvimento prepara para o crescimento futuro."] }] },
+      { id: "o3", t: "Melhorar o desempenho e aumentar a produtividade",
+        lead: ["Melhorar o desempenho organizacional e aumentar a produtividade são objetivos principais da área."],
+        groups: [{ h: "Processos ligados", items: ["Aplicar pessoas: a avaliação de desempenho mede produtividade, competências, resultados e comportamento profissional.", "Desenvolver pessoas: o treinamento aumenta a produtividade e melhora a qualidade."] }] },
+      { id: "o4", t: "Reduzir a rotatividade", s: "Turnover",
+        lead: ["Reduzir a rotatividade de funcionários."],
+        groups: [{ h: "Processos ligados", items: ["Recompensar pessoas: valorizar e reter talentos.", "Manter pessoas: garantir satisfação e permanência dos colaboradores."] }] },
+      { id: "o5", t: "Promover motivação e engajamento",
+        lead: ["Promover motivação e engajamento dos colaboradores."],
+        groups: [{ h: "Processo ligado", items: ["Recompensar pessoas: a recompensa influencia motivação e desempenho."] }] },
+      { id: "o6", t: "Garantir qualidade de vida no trabalho",
+        lead: ["Garantir qualidade de vida no trabalho."],
+        groups: [{ h: "Processo ligado", items: ["Manter pessoas: segurança do trabalho, saúde ocupacional, comunicação interna, gestão de conflitos e ambiente organizacional positivo."] }] },
+      { id: "o7", t: "Alinhar os colaboradores aos objetivos da organização", s: "Objetivo estratégico",
+        lead: ["O objetivo estratégico da gestão de pessoas é alinhar os colaboradores aos objetivos da organização."],
+        groups: [{ h: "Resultado esperado", items: ["Maior competitividade e crescimento empresarial."] }] }
+    ] },
+  { id: "processos", cls: "b-processos", ang: 135, color: "#A98BFF", name: "Os seis processos interdependentes", short: "Processos",
+    lead: ["A gestão de pessoas se organiza em seis processos. O objetivo é garantir eficiência administrativa e desenvolvimento humano."],
+    groups: [
+      { h: "Os seis processos", chips: true, items: ["1. Agregar", "2. Aplicar", "3. Recompensar", "4. Desenvolver", "5. Manter", "6. Monitorar"] }
+    ],
+    note: "Todos os processos são interdependentes.",
+    leaves: [
+      { id: "p1", n: 1, t: "Agregar pessoas", s: "Recrutamento e seleção",
+        lead: ["Recrutamento é o processo de atração de candidatos para vagas disponíveis. Seleção é a escolha do candidato mais adequado ao cargo."],
+        groups: [
+          { h: "Tipos de recrutamento", chips: true, items: ["Interno", "Externo", "Misto"] },
+          { h: "Ferramentas utilizadas", chips: true, items: ["Entrevistas", "Testes psicológicos", "Dinâmicas de grupo", "Análise curricular", "Testes técnicos"] },
+          { h: "Objetivo", items: ["Contratar profissionais alinhados às necessidades organizacionais."] }
+        ] },
+      { id: "p2", n: 2, t: "Aplicar pessoas", s: "Integração, cargos e avaliação",
+        lead: ["Aplicar pessoas significa inserir corretamente o colaborador na organização."],
+        groups: [
+          { h: "Atividades", chips: true, items: ["Descrição de cargos", "Planejamento de funções", "Integração organizacional", "Avaliação de desempenho"] },
+          { h: "A avaliação de desempenho mede", chips: true, items: ["Produtividade", "Competências", "Resultados", "Comportamento profissional"] },
+          { h: "Métodos de avaliação", items: ["Avaliação entre gestor e colaborador", "Avaliação completa por múltiplas fontes", "Metas por indicadores"] }
+        ] },
+      { id: "p3", n: 3, t: "Recompensar pessoas", s: "Salários e benefícios",
+        lead: ["A recompensa influencia motivação e desempenho."],
+        groups: [
+          { h: "Formas de remuneração", chips: true, items: ["Salário fixo", "Salário variável", "Participação nos lucros", "Bonificações"] },
+          { h: "Benefícios", chips: true, items: ["Vale-alimentação", "Plano de saúde", "Vale-transporte", "Seguro de vida", "Auxílio educação"] },
+          { h: "Objetivo", items: ["Valorizar e reter talentos."] }
+        ] },
+      { id: "p4", n: 4, t: "Desenvolver pessoas", s: "Treinamento e desenvolvimento",
+        lead: ["Treinamento é a capacitação voltada às funções atuais. Desenvolvimento é a preparação para o crescimento profissional futuro."],
+        groups: [
+          { h: "Ferramentas", chips: true, items: ["Cursos", "Oficinas práticas", "Acompanhamento profissional", "Orientação profissional", "Educação corporativa"] },
+          { h: "Benefícios", chips: true, items: ["Aumento da produtividade", "Redução de erros", "Formação de líderes", "Melhoria da qualidade"] }
+        ] },
+      { id: "p5", n: 5, t: "Manter pessoas", s: "Qualidade de vida no trabalho",
+        lead: ["O objetivo é garantir satisfação e permanência dos colaboradores."],
+        groups: [
+          { h: "Ações organizacionais", chips: true, items: ["Segurança do trabalho", "Saúde ocupacional", "Comunicação interna", "Gestão de conflitos", "Ambiente organizacional positivo"] }
+        ] },
+      { id: "p6", n: 6, t: "Monitorar pessoas", s: "Acompanhamento e eficiência",
+        lead: ["Sexto e último processo da lista. Acompanha o que acontece nos demais processos, a serviço do objetivo geral: garantir eficiência administrativa e desenvolvimento humano."],
+        note: "A apresentação apenas cita este processo, sem detalhá-lo. A descrição acima segue a classificação de Chiavenato, autor que consta nas referências da aula." }
+    ] },
+  { id: "papel", cls: "b-papel", ang: 45, color: "#FF6B84", name: "O papel estratégico", short: "Papel estratégico",
+    lead: ["O setor de Gestão de Pessoas deixou de atuar apenas de forma burocrática. É o chamado Recursos Humanos estratégico."],
+    groups: [
+      { h: "Hoje o setor participa", items: ["Do planejamento estratégico", "Da gestão de talentos", "Da formação de lideranças", "Da cultura organizacional", "Da inovação empresarial"] },
+      { h: "Contribui diretamente para", chips: true, items: ["Resultados financeiros", "Eficiência operacional", "Vantagem competitiva"] }
+    ],
+    note: "Pessoas qualificadas aumentam a capacidade de inovação da empresa.",
+    leaves: [
+      { id: "e1", t: "Participação no planejamento estratégico",
+        lead: ["O setor de Gestão de Pessoas deixou de atuar apenas de forma burocrática e hoje participa do planejamento estratégico da empresa."] },
+      { id: "e2", t: "Gestão de talentos e formação de lideranças",
+        lead: ["Hoje o setor também participa da gestão de talentos e da formação de lideranças."] },
+      { id: "e3", t: "Cultura organizacional e inovação",
+        lead: ["O setor participa da cultura organizacional e da inovação empresarial."] },
+      { id: "e4", t: "Resultados financeiros e eficiência operacional",
+        lead: ["O Recursos Humanos estratégico contribui diretamente para os resultados financeiros e para a eficiência operacional."] },
+      { id: "e5", t: "Vantagem competitiva", s: "Inovação através de pessoas",
+        lead: ["O Recursos Humanos estratégico contribui diretamente para a vantagem competitiva da organização."],
+        note: "Importância: pessoas qualificadas aumentam a capacidade de inovação da empresa." }
+    ] }
+];
+
+var SUN = {
+  lead: [
+    "A Gestão de Pessoas é fundamental para o sucesso organizacional.",
+    "Empresas que valorizam pessoas possuem melhores resultados e maior competitividade."
+  ],
+  groups: [
+    { h: "Ela contribui para", chips: true, items: ["Desenvolvimento humano", "Crescimento empresarial", "Melhoria da produtividade", "Retenção de talentos", "Inovação organizacional"] },
+    { h: "Benefícios para a empresa", chips: true, items: ["Maior produtividade", "Redução de custos", "Menor rotatividade de funcionários", "Melhor clima organizacional", "Vantagem competitiva"] }
+  ],
+  quote: "Pessoas capacitadas e motivadas são o principal patrimônio das organizações."
+};
+
+var QZ = [
+  { q: "O que é a Gestão de Pessoas?",
+    o: ["O conjunto de práticas administrativas usadas para administrar o capital humano das organizações",
+        "Apenas a folha de pagamento e o controle de ponto",
+        "O setor que cuida somente de contratações e demissões",
+        "A área responsável pelos equipamentos da empresa"],
+    a: 0, e: "Ela integra pessoas, processos, estratégias e resultados organizacionais." },
+  { q: "Qual processo reúne o recrutamento e a seleção?",
+    o: ["Agregar pessoas", "Recompensar pessoas", "Manter pessoas", "Monitorar pessoas"],
+    a: 0, e: "O recrutamento atrai candidatos para as vagas e a seleção escolhe o mais adequado ao cargo." },
+  { q: "Descrição de cargos, integração organizacional e avaliação de desempenho são atividades de qual processo?",
+    o: ["Aplicar pessoas", "Desenvolver pessoas", "Recompensar pessoas", "Agregar pessoas"],
+    a: 0, e: "Aplicar pessoas significa inserir corretamente o colaborador na organização." },
+  { q: "Qual é a diferença entre treinamento e desenvolvimento?",
+    o: ["Treinamento capacita para as funções atuais e desenvolvimento prepara para o crescimento profissional futuro",
+        "Treinamento prepara para o futuro e desenvolvimento capacita para as funções atuais",
+        "Os dois termos significam exatamente a mesma coisa",
+        "Treinamento é só para novos contratados e desenvolvimento só para gestores"],
+    a: 0, e: "Os dois fazem parte do processo de desenvolver pessoas, com focos diferentes no tempo." },
+  { q: "Qual é o objetivo estratégico da Gestão de Pessoas?",
+    o: ["Alinhar os colaboradores aos objetivos da organização",
+        "Reduzir ao máximo o número de funcionários",
+        "Controlar o horário de entrada e saída das equipes",
+        "Aumentar a rotatividade para renovar sempre as equipes"],
+    a: 0, e: "O resultado esperado é maior competitividade e crescimento empresarial." },
+  { q: "O que a apresentação afirma sobre os seis processos?",
+    o: ["Todos os processos são interdependentes",
+        "Cada processo funciona sozinho, sem relação com os outros",
+        "Só o primeiro processo é obrigatório",
+        "Eles acontecem uma única vez, na contratação"],
+    a: 0, e: "Por isso uma falha em um processo costuma afetar os demais." },
+  { q: "Segurança do trabalho, saúde ocupacional e gestão de conflitos são ações de qual processo?",
+    o: ["Manter pessoas", "Agregar pessoas", "Aplicar pessoas", "Desenvolver pessoas"],
+    a: 0, e: "Manter pessoas busca qualidade de vida no trabalho e garante a satisfação e a permanência dos colaboradores." }
+];
+
+/* ------------------------------------------------------------------ */
+/* Índices e progresso                                                 */
+/* ------------------------------------------------------------------ */
+var NODES = {}, ORDER = [], LEAF_IDS = [];
+var COL = {};
+BRANCHES.forEach(function(b){
+  COL[b.id] = b.color;
+  NODES[b.id] = { id: b.id, type: "branch", b: b, title: b.name, lead: b.lead, groups: b.groups, note: b.note };
+  ORDER.push(b.id);
+  b.leaves.forEach(function(l, i){
+    NODES[l.id] = { id: l.id, type: "leaf", b: b, i: i, title: l.t, sub: l.s, lead: l.lead, groups: l.groups, note: l.note };
+    ORDER.push(l.id);
+    LEAF_IDS.push(l.id);
+  });
+});
+NODES.sun = { id: "sun", type: "sun", title: "Gestão de Pessoas", lead: SUN.lead, groups: SUN.groups, quote: SUN.quote };
+
+var store = {
+  get: function(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set: function(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+var seen = {};
+try {
+  JSON.parse(store.get("gp-galaxia") || "[]").forEach(function(id){
+    if (NODES[id] && NODES[id].type === "leaf") seen[id] = true;
+  });
+} catch(e){}
+
+/* ------------------------------------------------------------------ */
+/* Elementos                                                           */
+/* ------------------------------------------------------------------ */
+var stage = $("#stage"), sun = $("#sun"), lanes = $("#lanes"), backBtn = $("#back");
+var panel = $("#panel"), pBody = $("#pBody"), pChip = $("#pChip"), pTitle = $("#pTitle");
+var pSub = $("#pSub"), pPrev = $("#pPrev"), pNext = $("#pNext"), pPos = $("#pPos");
+var BR = {}, MO = {};
+
+$("#pClose").addEventListener("click", function(){ closePanel(); });
+pPrev.innerHTML = ICO.arrowL + " Anterior";
+var BR_SHORT = {};
+BRANCHES.forEach(function(b){ BR_SHORT[b.id] = b.short; });
+
+BRANCHES.forEach(function(b){
+  var el = document.createElement("button");
+  el.type = "button";
+  el.className = "body " + b.cls;
+  el.dataset.id = b.id;
+  el.setAttribute("aria-label", b.name);
+  el.innerHTML = '<span class="orb"></span><span class="lbl">' + b.name +
+    '<small data-cnt="' + b.id + '">0 de ' + b.leaves.length + ' explorados</small></span>';
+  stage.appendChild(el);
+  BR[b.id] = el;
+  b.leaves.forEach(function(l){
+    var m = document.createElement("button");
+    m.type = "button";
+    m.className = "moon " + b.cls;
+    m.dataset.id = l.id;
+    m.setAttribute("aria-label", l.t);
+    m.innerHTML = '<span class="dot"></span><span class="mlbl">' + l.t + '</span>';
+    stage.appendChild(m);
+    MO[l.id] = m;
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Geometria e layout                                                  */
+/* ------------------------------------------------------------------ */
+var focus = null, panelId = null, lanesTimer = null;
+
+function geom(){
+  var W = stage.clientWidth, H = stage.clientHeight;
+  var wide = W >= 760;
+  var open = wide && !!panelId;
+  var avail = open ? W - 384 : W;
+  var base = Math.min(avail, H);
+  return {
+    W: W, H: H, wide: wide, cx: avail / 2, cy: H / 2,
+    rx: Math.min(avail * 0.34, 380), ry: Math.min(H * 0.34, 290),
+    sunD: clamp(base * 0.3, 110, 200),
+    bD: clamp(base * 0.15, 74, 124),
+    rm: wide ? clamp(base * 0.36, 150, 290) : clamp(base * 0.31, 100, 140),
+    mD: wide ? 30 : 26
+  };
+}
+function ell(b, g){
+  var t = b.ang * Math.PI / 180;
+  return [g.cx + g.rx * Math.cos(t), g.cy + g.ry * Math.sin(t)];
+}
+function setOn(){
+  Object.keys(MO).forEach(function(id){
+    MO[id].classList.toggle("on", id === panelId);
+  });
+}
+function curve(x1, y1, x2, y2, bend){
+  var mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1;
+  return "M" + x1.toFixed(1) + " " + y1.toFixed(1) +
+    " Q" + (mx - dy * bend).toFixed(1) + " " + (my + dx * bend).toFixed(1) +
+    " " + x2.toFixed(1) + " " + y2.toFixed(1);
+}
+function drawLanes(g){
+  lanes.setAttribute("viewBox", "0 0 " + g.W + " " + g.H);
+  var out = "";
+  if (!focus){
+    BRANCHES.forEach(function(b){
+      var p = ell(b, g);
+      out += '<path class="lane" stroke="' + COL[b.id] + '" d="' + curve(g.cx, g.cy, p[0], p[1], 0.16) + '"/>';
+    });
+  } else {
+    var fb = null;
+    BRANCHES.forEach(function(b){
+      if (b.id === focus){ fb = b; return; }
+      var p = ell(b, g);
+      out += '<path class="spoke" stroke="' + COL[b.id] + '" d="' + curve(g.cx, g.cy, p[0], p[1], 0.12) + '"/>';
+    });
+    var n = fb.leaves.length;
+    fb.leaves.forEach(function(l, i){
+      var t = (-90 + i * 360 / n) * Math.PI / 180;
+      out += '<path class="spoke" stroke="' + COL[focus] + '" d="M' + g.cx.toFixed(1) + " " + g.cy.toFixed(1) +
+        " L" + (g.cx + g.rm * Math.cos(t)).toFixed(1) + " " + (g.cy + g.rm * Math.sin(t)).toFixed(1) + '"/>';
+    });
+  }
+  lanes.innerHTML = out;
+}
+function layout(){
+  var g = geom();
+  stage.classList.toggle("labels", g.wide);
+  stage.classList.toggle("has-focus", !!focus);
+
+  sun.style.width = sun.style.height = g.sunD + "px";
+  sun.style.left = g.cx + "px";
+  sun.style.top = g.cy + "px";
+  sun.classList.toggle("off", !!focus);
+
+  BRANCHES.forEach(function(b){
+    var el = BR[b.id], p = ell(b, g), D = g.bD, op = 1, x = p[0], y = p[1];
+    if (focus === b.id){ x = g.cx; y = g.cy; D = g.bD * 1.3; }
+    else if (focus){
+      x = clamp(g.cx + (p[0] - g.cx) * 1.3, 40, g.W - 40);
+      y = clamp(g.cy + (p[1] - g.cy) * 1.3, 40, g.H - 40);
+      D = g.bD * 0.62; op = 0.3;
+    }
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    el.style.width = el.style.height = D + "px";
+    el.style.opacity = op;
+    el.classList.toggle("is-focus", focus === b.id);
+  });
+
+  BRANCHES.forEach(function(b){
+    var on = focus === b.id, n = b.leaves.length;
+    b.leaves.forEach(function(l, i){
+      var m = MO[l.id];
+      m.style.width = m.style.height = g.mD + "px";
+      if (on){
+        var a = -90 + i * 360 / n, t = a * Math.PI / 180;
+        m.style.left = (g.cx + g.rm * Math.cos(t)).toFixed(1) + "px";
+        m.style.top = (g.cy + g.rm * Math.sin(t)).toFixed(1) + "px";
+        if (g.wide){
+          m.style.setProperty("--ox", (Math.cos(t) * 112).toFixed(1) + "px");
+          m.style.setProperty("--oy", (Math.sin(t) * 46).toFixed(1) + "px");
+        } else {
+          m.style.setProperty("--ox", "0px");
+          m.style.setProperty("--oy", (Math.sin(t) >= 0 ? 34 : -34) + "px");
+        }
+        m.style.opacity = 1;
+        m.style.pointerEvents = "auto";
+      } else {
+        m.style.left = g.cx + "px";
+        m.style.top = g.cy + "px";
+        m.style.opacity = 0;
+        m.style.pointerEvents = "none";
+      }
+    });
+  });
+
+  drawLanes(g);
+  backBtn.hidden = !focus;
+  backBtn.innerHTML = ICO.arrowL + (focus ? " Centro · " + BR_SHORT[focus] : " Centro galáctico");
+
+  lanes.classList.add("hide");
+  clearTimeout(lanesTimer);
+  lanesTimer = setTimeout(function(){ lanes.classList.remove("hide"); }, reduce ? 0 : 850);
+}
+
+/* ------------------------------------------------------------------ */
+/* Progresso                                                           */
+/* ------------------------------------------------------------------ */
+function refresh(){
+  var n = Object.keys(seen).length, t = LEAF_IDS.length;
+  $("#barFill").style.width = (n / t * 100) + "%";
+  $("#meterTxt").textContent = n === t ? "Galáxia completa" : n + " de " + t + " tópicos explorados";
+  BRANCHES.forEach(function(b){
+    var c = b.leaves.filter(function(l){ return seen[l.id]; }).length;
+    $('[data-cnt="' + b.id + '"]').textContent = c + " de " + b.leaves.length + " explorados";
+  });
+  LEAF_IDS.forEach(function(id){ MO[id].classList.toggle("seen", !!seen[id]); });
+}
+function markSeen(id){
+  if (seen[id]) return;
+  seen[id] = true;
+  store.set("gp-galaxia", JSON.stringify(Object.keys(seen)));
+  refresh();
+}
+
+/* ------------------------------------------------------------------ */
+/* Painel                                                              */
+/* ------------------------------------------------------------------ */
+function renderPanel(id){
+  var n = NODES[id], b = n.b;
+  var cls = n.type === "sun" ? "b-sun" : b.cls;
+  panel.className = "panel " + cls;
+  pChip.textContent = n.type === "sun" ? "Síntese" :
+    n.type === "branch" ? "Ramo · " + b.short :
+    b.short + " · " + (n.i + 1) + " de " + b.leaves.length;
+  pTitle.textContent = n.title;
+  pSub.textContent = n.sub || "";
+  pSub.hidden = !n.sub;
+
+  var h = "";
+  (n.lead || []).forEach(function(p){ h += '<p class="lead">' + p + "</p>"; });
+  (n.groups || []).forEach(function(g){
+    h += '<div class="grp">' + (g.h ? "<h3>" + g.h + "</h3>" : "") +
+      '<ul class="' + (g.chips ? "chips" : "items") + '">' +
+      g.items.map(function(x){ return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
+  });
+  if (n.type === "branch"){
+    h += '<div class="grp"><h3>Tópicos deste ramo</h3><div class="jumps">' +
+      b.leaves.map(function(l){
+        return '<button class="jump" type="button" data-id="' + l.id + '"><span>' + l.t +
+          '</span><span class="jt">' + (seen[l.id] ? ICO.check : "") + "</span></button>";
+      }).join("") + "</div></div>";
+  }
+  if (n.note) h += '<p class="pnote">' + n.note + "</p>";
+  if (n.quote) h += '<blockquote class="quote">' + n.quote + "</blockquote>";
+  pBody.innerHTML = h;
+  pBody.scrollTop = 0;
+
+  var i = ORDER.indexOf(id);
+  pPos.textContent = i < 0 ? "" : (i + 1) + " de " + ORDER.length;
+  pPrev.hidden = i <= 0;
+  pNext.innerHTML = i === ORDER.length - 1 ? "Concluir" : "Próximo " + ICO.arrowR;
+}
+function openPanel(id){
+  panelId = id;
+  renderPanel(id);
+  panel.hidden = false;
+  setOn();
+  layout();
+  if (!geom().wide && NODES[id].type === "leaf"){
+    panel.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+}
+function closePanel(){
+  panelId = null;
+  panel.hidden = true;
+  setOn();
+  layout();
+}
+function select(id){
+  if (id === "sun"){ focus = null; openPanel("sun"); return; }
+  if (BR[id]){ focus = id; openPanel(id); return; }
+  var n = NODES[id];
+  focus = n.b.id;
+  markSeen(id);
+  openPanel(id);
+}
+function goQuiz(){
+  var el = $("#quiz");
+  if (el.scrollIntoView) el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+}
+
+stage.addEventListener("click", function(e){
+  var t = e.target.closest("[data-id]");
+  if (t && t.dataset.id) select(t.dataset.id);
+});
+$("#pBody").addEventListener("click", function(e){
+  var j = e.target.closest(".jump");
+  if (j) select(j.dataset.id);
+});
+backBtn.addEventListener("click", function(){
+  focus = null;
+  panelId = null;
+  panel.hidden = true;
+  setOn();
+  layout();
+});
+pPrev.addEventListener("click", function(){
+  var i = ORDER.indexOf(panelId);
+  if (i > 0) select(ORDER[i - 1]);
+});
+pNext.addEventListener("click", function(){
+  var i = ORDER.indexOf(panelId);
+  if (i < ORDER.length - 1) select(ORDER[i < 0 ? 0 : i + 1]);
+  else { closePanel(); goQuiz(); }
+});
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape"){
+    if (!panel.hidden) closePanel();
+    else if (focus){ focus = null; layout(); }
+  } else if (!panel.hidden && e.key === "ArrowRight" && !pNext.disabled){ pNext.click(); }
+  else if (!panel.hidden && e.key === "ArrowLeft" && !pPrev.hidden){ pPrev.click(); }
+});
+
+/* ------------------------------------------------------------------ */
+/* Céu estrelado                                                       */
+/* ------------------------------------------------------------------ */
+var sky = $("#sky"), ctx = sky.getContext("2d");
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+var W0 = 0, H0 = 0, stars = [], px = 0, py = 0, tx = 0, ty = 0, shoot = null, lastShoot = 0;
+
+function sizeSky(){
+  W0 = window.innerWidth; H0 = window.innerHeight;
+  sky.width = W0 * dpr; sky.height = H0 * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var n = clamp(Math.round(W0 * H0 / 5000), 90, 300);
+  stars = [];
+  for (var i = 0; i < n; i++){
+    stars.push({ x: Math.random() * W0, y: Math.random() * H0, z: 0.25 + Math.random() * 0.75,
+      p: Math.random() * 6.283, s: 0.6 + Math.random() * 1.6 });
+  }
+}
+function wrap(v, m){ return ((v % m) + m) % m; }
+function drawSky(t){
+  ctx.clearRect(0, 0, W0, H0);
+  px += (tx - px) * 0.04; py += (ty - py) * 0.04;
+  ctx.fillStyle = "#E4EAFF";
+  for (var i = 0; i < stars.length; i++){
+    var s = stars[i];
+    var x = wrap(s.x + px * s.z * 22, W0), y = wrap(s.y + py * s.z * 22, H0);
+    var a = 0.35 + 0.5 * (0.5 + 0.5 * Math.sin(t * 0.0012 * s.s + s.p));
+    ctx.globalAlpha = a * (0.45 + 0.55 * s.z);
+    ctx.beginPath();
+    ctx.arc(x, y, s.z * s.s * 0.9, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (!reduce){
+    if (!shoot && t - lastShoot > 7000){
+      shoot = { x: Math.random() * W0 * 0.6, y: Math.random() * H0 * 0.4, t0: t };
+      lastShoot = t;
+    }
+    if (shoot){
+      var k = (t - shoot.t0) / 900;
+      if (k > 1) shoot = null;
+      else {
+        var sx = shoot.x + k * 260, sy = shoot.y + k * 120;
+        ctx.strokeStyle = "rgba(230,238,255," + ((1 - k) * 0.8).toFixed(3) + ")";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(sx - 40, sy - 18);
+        ctx.lineTo(sx, sy);
+        ctx.stroke();
+      }
+    }
+  }
+}
+function loop(t){
+  for (var i = 0; i < stars.length; i++){ stars[i].y += stars[i].z * 0.04; }
+  drawSky(t);
+  requestAnimationFrame(loop);
+}
+window.addEventListener("pointermove", function(e){
+  tx = (e.clientX / window.innerWidth - 0.5) * 2;
+  ty = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+/* ------------------------------------------------------------------ */
+/* Abertura                                                            */
+/* ------------------------------------------------------------------ */
+var splash = $("#splash");
+function hideSplash(){
+  if (splash.hidden) return;
+  splash.classList.add("gone");
+  setTimeout(function(){ splash.hidden = true; }, 650);
+}
+splash.addEventListener("click", hideSplash);
+setTimeout(hideSplash, reduce ? 0 : 1300);
+
+var rz = null;
+window.addEventListener("resize", function(){
+  clearTimeout(rz);
+  rz = setTimeout(function(){ sizeSky(); layout(); }, 120);
+});
+
+sizeSky();
+if (reduce){ drawSky(0); } else { requestAnimationFrame(loop); }
+refresh();
+layout();
+requestAnimationFrame(function(){
+  layout();
+  requestAnimationFrame(function(){ stage.classList.add("ready"); });
+});
+if (document.fonts && document.fonts.ready){ document.fonts.ready.then(layout); }
+
+/* ------------------------------------------------------------------ */
+/* Teste final                                                         */
+/* ------------------------------------------------------------------ */
+var qCard = $("#qCard");
+var qi = 0, score = 0, locked = false, perm = [];
+
+function shuffle(a){
+  a = a.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function segs(){
+  return '<div class="q-segs" aria-hidden="true">' + QZ.map(function(_, i){
+    return '<i class="' + (i < qi || (i === qi && locked) ? "done" : "") + '"></i>';
+  }).join("") + "</div>";
+}
+function qStart(){
+  qi = 0; score = 0; locked = false;
+  perm = QZ.map(function(z){ return shuffle(z.o.map(function(_, i){ return i; })); });
+  qRender(false);
+}
+function qRender(focusFirst){
+  if (qi >= QZ.length){
+    var msg = score >= 6 ? "Você dominou o conteúdo da galáxia."
+      : score >= 4 ? "Bom resultado. Reveja no mapa os tópicos que escaparam."
+      : "Vale percorrer o mapa de novo e tentar outra vez.";
+    qCard.innerHTML = '<div class="q-top"><span>Resultado</span>' + segs() + "</div>" +
+      '<p class="q-score">' + score + "<span>de " + QZ.length + " acertos</span></p>" +
+      '<p class="q-msg">' + msg + "</p>" +
+      '<div class="q-actions"><button class="btn" type="button" data-q="restart">Refazer o teste</button>' +
+      '<button class="btn primary" type="button" data-q="tour">Voltar ao mapa</button></div>';
+    return;
+  }
+  var z = QZ[qi];
+  qCard.innerHTML = '<div class="q-top"><span>Pergunta ' + (qi + 1) + " de " + QZ.length + "</span>" + segs() + "</div>" +
+    '<h3 class="q-q">' + z.q + "</h3>" +
+    '<div class="opts">' + perm[qi].map(function(oi, k){
+      return '<button class="opt" type="button" data-oi="' + oi + '"><span class="ltr">' + "ABCD".charAt(k) + "</span><span>" + z.o[oi] + "</span></button>";
+    }).join("") + "</div>" +
+    '<div id="qFb" role="status" aria-live="polite"></div>' +
+    '<div class="q-actions" id="qAct"></div>';
+  if (focusFirst){ var f = $(".opt", qCard); if (f) f.focus(); }
+}
+qCard.addEventListener("click", function(e){
+  var opt = e.target.closest(".opt");
+  if (opt && !locked){
+    locked = true;
+    var z = QZ[qi], chosen = +opt.dataset.oi, ok = chosen === z.a;
+    if (ok) score++;
+    $$(".opt", qCard).forEach(function(b){
+      var oi = +b.dataset.oi;
+      b.disabled = true;
+      if (oi === z.a){ b.classList.add("ok"); $(".ltr", b).innerHTML = ICO.check; }
+      else if (oi === chosen){ b.classList.add("bad"); $(".ltr", b).innerHTML = ICO.xs; }
+    });
+    $("#qFb").innerHTML = '<p class="fb"><b>' + (ok ? "Correto." : "Não foi dessa vez. A resposta certa está destacada.") + "</b> " + z.e + "</p>";
+    $("#qAct").innerHTML = '<button class="btn primary" type="button" data-q="next">' +
+      (qi === QZ.length - 1 ? "Ver resultado" : "Próxima pergunta " + ICO.arrowR) + "</button>";
+    $(".q-segs", qCard).outerHTML = segs();
+    return;
+  }
+  var a = e.target.closest("[data-q]");
+  if (!a) return;
+  var act = a.dataset.q;
+  if (act === "next"){ qi++; locked = false; qRender(true); }
+  else if (act === "restart"){ qStart(); }
+  else if (act === "tour"){ window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); }
+});
+qStart();
+
+})();
+</script>
+
+</body>
+</html>
